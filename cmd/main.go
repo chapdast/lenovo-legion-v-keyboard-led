@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 
@@ -72,7 +73,8 @@ func main() {
 	case "static":
 		list, err := lvl.ColorFromString(colors)
 		if err != nil {
-			log.Fatalf("error: %s\n", err)
+			fmt.Printf("error: %s\n", err)
+			os.Exit(1)
 		}
 		if err := lk.Static(lvl.EffectSpeed(speed), lvl.Brightness(brightness), list[0]); err != nil {
 			log.Fatalln(err)
@@ -80,7 +82,8 @@ func main() {
 	case "breath":
 		list, err := lvl.ColorFromString(colors)
 		if err != nil {
-			log.Fatalf("error: %s\n", err)
+			fmt.Printf("error: %s\n", err)
+			os.Exit(1)
 		}
 		if err := lk.Breath(lvl.EffectSpeed(speed), lvl.Brightness(brightness), list...); err != nil {
 			log.Fatalln(err)
@@ -103,6 +106,9 @@ func main() {
 		if err := lk.Off(); err != nil {
 			log.Fatalln(err)
 		}
+	default:
+		fmt.Printf("unknown effect type: %q\n", effectType)
+		os.Exit(1)
 	}
 
 	ctx := gousb.NewContext()
@@ -124,17 +130,24 @@ func main() {
 	dev, err := ctx.OpenDeviceWithVIDPID(gousb.ID(vID), gousb.ID(pID))
 	if err != nil {
 		if errors.Is(err, gousb.ErrorAccess) {
-			log.Fatal(ErrPermissionDenied)
+			fmt.Println(`Add udev rule as "/etc/udev/rules.d/10-kblight.rules" if you want control light as user
+			SUBSYSTEM=="usb", ATTR{idVendor}=="048d", ATTR{idProduct}=="c965", MODE="0666"
+			`)
+			fmt.Println(ErrPermissionDenied)
+			os.Exit(1)
 		}
-		log.Fatalf("error located device: %s\n", err)
+		fmt.Printf("error located device: %s\n", err)
+		os.Exit(1)
 	}
 	if dev == nil {
-		log.Fatalf("can not get device make sure VendorID:ProducID is correct, current is % x:% x", vID, pID)
+		fmt.Println("can not get device make sure VendorID:ProducID is correct, current is % x:% x", vID, pID)
+		os.Exit(1)
 	}
 	defer dev.Close()
 	// Device need to get detached before sending any commands
 	if err := dev.SetAutoDetach(true); err != nil {
-		log.Fatalf("failed to detach device from kernel, %s\n", err)
+		fmt.Printf("failed to detach device from kernel, %s\n", err)
+		os.Exit(1)
 	}
 
 	data := lk.Data()
@@ -143,12 +156,15 @@ func main() {
 	c, err := dev.Control(0x21, 0x9, 0x03CC, 0x00, data)
 	if err != nil {
 		if errors.Is(err, gousb.ErrorBusy) {
-			log.Fatalln("error send command: device is busy")
+			fmt.Println("error send command: device is busy")
+			os.Exit(1)
 		}
-		log.Fatalf("error send command: %s\n", err)
+		fmt.Printf("error send command: %s\n", err)
+		os.Exit(1)
 	}
 	if c != len(data) {
-		log.Fatalln(ErrInvalidDataLength)
+		fmt.Println(ErrInvalidDataLength)
+		os.Exit(1)
 	}
 }
 
