@@ -180,28 +180,3 @@ var (
 	ErrNoDeviceFound     = errors.New("no lenovo keyboard device found")
 	ErrPermissionDenied  = errors.New("permission denied")
 )
-
-// func sendCommand(dev *gousb.Device, data []byte) error {
-
-// }
-
-// func getDevice(ctx *gousb.Context) (dev *gousb.Device, err error) {
-// 	vID := 0x048d
-// 	pIDs := []uint16{0xc955, 0x965}
-// 	for _, pID := range pIDs {
-// 		dev, err = ctx.OpenDeviceWithVIDPID(gousb.ID(vID), gousb.ID(pID))
-// 		if err != nil {
-// 			if errors.Is(err, gousb.ErrorAccess) {
-// 				return nil, ErrPermissionDenied
-// 			}
-// 			log.Printf("error located device: %s\n", err)
-// 		}
-// 		if dev != nil {
-// 			return dev, nil
-// 		}
-// 	}
-// 	if dev == nil {
-// 		return nil, ErrNoDeviceFound
-// 	}
-// 	return dev, err
-// }
