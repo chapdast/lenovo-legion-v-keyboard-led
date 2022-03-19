@@ -2,17 +2,10 @@ package legion_v_keyboard_led
 
 import (
 	"errors"
+	"fmt"
 )
 
 var ErrNoColor = errors.New("no color specified")
-var (
-	ColorOff   = &Color{}
-	ColorBlack = &Color{}
-	ColorWhite = &Color{Red: 0xff, Green: 0xff, Blue: 0xff}
-	ColorRed   = &Color{Red: 0xff}
-	ColorGreen = &Color{Green: 0xff}
-	ColorBlue  = &Color{Blue: 0xff}
-)
 
 type LKeyboard interface {
 	Static(s EffectSpeed, b Brightness, c *Color) error
@@ -29,15 +22,28 @@ type LKeyboard interface {
 var _ LKeyboard = &lKeyboard{}
 
 type lKeyboard struct {
-	dataPackage []byte
-	effect      EffectType
-	speed       EffectSpeed
-	brightness  Brightness
-	colors      []*Color
-	waveRTL     Direction
+	dataPackage   []byte
+	effect        EffectType
+	speed         EffectSpeed
+	brightness    Brightness
+	colors        []*Color
+	waveDirection Direction
 }
 
 type Direction int
+
+func (d Direction) String() string {
+	switch d {
+	case LTR:
+		return "LTR"
+	case RTL:
+		return "RTL"
+	case Def:
+		fallthrough
+	default:
+		return "NO-DIR"
+	}
+}
 
 const (
 	Def = iota
@@ -45,28 +51,47 @@ const (
 	LTR
 )
 
-type Color struct {
-	Red   byte
-	Green byte
-	Blue  byte
-}
-
-func (c Color) RGB() []byte {
-	return []byte{c.Red, c.Green, c.Blue}
-}
-
 func New() LKeyboard {
 	return &lKeyboard{}
 }
 
 type Brightness byte
 
+func (b Brightness) String() string {
+	switch b {
+	case BrightnessLow:
+		return "low"
+	case BrightnessHigh:
+		return "high"
+	case BrightnessDefault:
+		fallthrough
+	default:
+		return "off"
+	}
+}
+
 var (
-	BrightnessLow  = Brightness(0x01)
-	BrightnessHigh = Brightness(0x02)
+	BrightnessDefault = Brightness(0x00)
+	BrightnessLow     = Brightness(0x01)
+	BrightnessHigh    = Brightness(0x02)
 )
 
 type EffectType byte
+
+func (et EffectType) String() string {
+	switch et {
+	case EffectStatic:
+		return "static"
+	case EffectBreath:
+		return "breath"
+	case EffectWave:
+		return "wave"
+	case EffectHue:
+		return "hue"
+	default:
+		return "off"
+	}
+}
 
 var (
 	EffectStatic = EffectType(0x01)
@@ -76,6 +101,24 @@ var (
 )
 
 type EffectSpeed byte
+
+func (es EffectSpeed) String() string {
+	switch es {
+	case EffectSpeedSlowest:
+		return "slowest"
+	case EffectSpeedSlow:
+		return "slow"
+	case EffectSpeedFast:
+		return "fast"
+	case EffectSpeedFastest:
+		return "fastest"
+	case EffectSpeedDefault:
+		fallthrough
+	default:
+		return "stoped"
+
+	}
+}
 
 var (
 	EffectSpeedDefault = EffectSpeed(0x00)
@@ -125,6 +168,16 @@ func (lk *lKeyboard) Manual(effect EffectType, speed EffectSpeed, bright Brightn
 	lk.brightness = bright
 	lk.speed = speed
 	lk.colors = c
-	lk.waveRTL = dir
+	lk.waveDirection = dir
 	return lk.build()
+}
+
+func (lk lKeyboard) String() string {
+
+	return fmt.Sprintf(`Configed with:
+	Effect: %s,
+	Speed: %s,
+	Brightness: %s,
+	Direction: %s,
+	Colors: %s`, lk.effect, lk.speed, lk.brightness, lk.waveDirection, lk.colors)
 }

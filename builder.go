@@ -10,6 +10,7 @@ func (lk *lKeyboard) setEffect() {
 	lk.dataPackage[3] = byte(lk.speed)
 	lk.dataPackage[4] = byte(lk.brightness)
 }
+
 func (lk *lKeyboard) setColor() error {
 	if (lk.effect == EffectStatic || lk.effect == EffectBreath) && len(lk.colors) == 0 {
 		return ErrNoColor
@@ -44,7 +45,7 @@ func (lk *lKeyboard) setColor() error {
 
 func (lk *lKeyboard) setWaveDir() {
 	if lk.effect == EffectWave {
-		switch lk.waveRTL {
+		switch lk.waveDirection {
 		case RTL:
 			lk.dataPackage[18] = 0x01
 			lk.dataPackage[19] = 0x00
