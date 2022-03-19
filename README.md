@@ -7,11 +7,13 @@ This uses go implementation of libusb-1.0 form
 
 
 ## Effects Avaliable are:
+ ```
  static
  breath
  hue
  wave
-
+ off
+```
 ## Install:
 clone this repository and build it.
 
