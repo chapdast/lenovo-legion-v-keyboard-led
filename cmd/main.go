@@ -136,6 +136,10 @@ func main() {
 		if errors.Is(err, gousb.ErrorAccess) {
 			fmt.Printf(`Add udev rule as "/etc/udev/rules.d/10-kblight.rules" if you want control light as user
 SUBSYSTEM=="usb", ATTR{idVendor}=="%04x", ATTR{idProduct}=="%04x", MODE="0666"
+
+then run
+
+sudo udevadm control --reload-rules && sudo udevadm trigger
 `, vID, pID)
 			fmt.Println(ErrPermissionDenied)
 			os.Exit(1)
