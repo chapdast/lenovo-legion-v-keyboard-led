@@ -7,10 +7,10 @@ This uses go implementation of libusb-1.0 form
 
 
 ## Effects Avaliable are:
-### static
-### breath
-### hue
-### wave
+ static
+ breath
+ hue
+ wave
 
 ## Install:
 clone this repository and build it.
@@ -29,7 +29,9 @@ lvl -e static -c 00ff00,0000ff
 ```
 will set keyboard light effect a static effect with two color of Green and Blue repeated across all 4 sections.
 
-and of course you always can use -h option to see below help message.
+
+
+You can use -h option to see below help message.
 ```
 Usage of lvl:
   -b int
