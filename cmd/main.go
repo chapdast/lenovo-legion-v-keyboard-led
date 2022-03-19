@@ -20,6 +20,7 @@ var (
 	speed      int
 	colors     string
 	vpid       string
+	debug      bool
 )
 var (
 	cmdEffectType = `Keyboard LED light effect:
@@ -46,6 +47,7 @@ var (
 )
 
 func init() {
+
 	flag.StringVar(&effectType, "effect", "off", cmdEffectType)
 	flag.StringVar(&waveDir, "dir", "ltr", cmdWaveDir)
 	flag.IntVar(&brightness, "bright", 2, cmdLEDBrightness)
@@ -59,14 +61,16 @@ func init() {
 	flag.IntVar(&speed, "s", 1, cmdEffectSpeed)
 	flag.StringVar(&colors, "c", "", cmdColors)
 
+	flag.BoolVar(&debug, "debug", false, "show debug messages")
+
 }
 
 func main() {
 
 	flag.Parse()
-
-	log.Printf("flags:\nET:%s,\nSP:%d,\nBR:%d,\nDR:%s,\nCS:%s\n", effectType, brightness, speed, waveDir, colors)
-
+	if debug {
+		log.Printf("flags:\nET:%s,\nSP:%d,\nBR:%d,\nDR:%s,\nCS:%s\n", effectType, brightness, speed, waveDir, colors)
+	}
 	lk := lvl.New()
 
 	switch strings.ToLower(effectType) {
@@ -130,9 +134,9 @@ func main() {
 	dev, err := ctx.OpenDeviceWithVIDPID(gousb.ID(vID), gousb.ID(pID))
 	if err != nil {
 		if errors.Is(err, gousb.ErrorAccess) {
-			fmt.Println(`Add udev rule as "/etc/udev/rules.d/10-kblight.rules" if you want control light as user
-			SUBSYSTEM=="usb", ATTR{idVendor}=="048d", ATTR{idProduct}=="c965", MODE="0666"
-			`)
+			fmt.Printf(`Add udev rule as "/etc/udev/rules.d/10-kblight.rules" if you want control light as user
+SUBSYSTEM=="usb", ATTR{idVendor}=="%04x", ATTR{idProduct}=="%04x", MODE="0666"
+`, vID, pID)
 			fmt.Println(ErrPermissionDenied)
 			os.Exit(1)
 		}
@@ -151,8 +155,11 @@ func main() {
 	}
 
 	data := lk.Data()
-	log.Printf("data: %d, % x\n", len(data), data)
-	fmt.Println(lk)
+
+	if debug {
+		log.Printf("data: %d, % x\n", len(data), data)
+		fmt.Println(lk)
+	}
 	c, err := dev.Control(0x21, 0x9, 0x03CC, 0x00, data)
 	if err != nil {
 		if errors.Is(err, gousb.ErrorBusy) {
