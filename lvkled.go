@@ -8,7 +8,7 @@ import (
 var ErrNoColor = errors.New("no color specified")
 
 type LKeyboard interface {
-	Static(s EffectSpeed, b Brightness, c *Color) error
+	Static(s EffectSpeed, b Brightness, c ...*Color) error
 	Breath(s EffectSpeed, b Brightness, c ...*Color) error
 	Wave(s EffectSpeed, b Brightness, rtl Direction) error
 	HUE(s EffectSpeed, b Brightness) error
@@ -135,8 +135,8 @@ var (
 	OFF = ControlBytes(0x00)
 )
 
-func (lk *lKeyboard) Static(s EffectSpeed, b Brightness, c *Color) error {
-	return lk.Manual(EffectStatic, s, b, Def, c)
+func (lk *lKeyboard) Static(s EffectSpeed, b Brightness, c ...*Color) error {
+	return lk.Manual(EffectStatic, s, b, Def, c...)
 }
 func (lk *lKeyboard) Breath(s EffectSpeed, b Brightness, c ...*Color) error {
 	return lk.Manual(EffectBreath, s, b, Def, c...)

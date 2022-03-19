@@ -15,28 +15,20 @@ func (lk *lKeyboard) setColor() error {
 	if (lk.effect == EffectStatic || lk.effect == EffectBreath) && len(lk.colors) == 0 {
 		return ErrNoColor
 	}
-	if lk.effect == EffectStatic {
-		for i := 0; i < 4; i++ {
-			lk.dataPackage[5+(i*3)+0] = lk.colors[0].Red
-			lk.dataPackage[5+(i*3)+1] = lk.colors[0].Green
-			lk.dataPackage[5+(i*3)+2] = lk.colors[0].Blue
+	for i := 0; i < 4; i++ {
+		if i < len(lk.colors) {
+			lk.dataPackage[5+(i*3)+0] = lk.colors[i].Red
+			lk.dataPackage[5+(i*3)+1] = lk.colors[i].Green
+			lk.dataPackage[5+(i*3)+2] = lk.colors[i].Blue
 		}
-	} else if lk.effect == EffectBreath {
-		for i := 0; i < 4; i++ {
-			if i < len(lk.colors) {
-				lk.dataPackage[5+(i*3)+0] = lk.colors[i].Red
-				lk.dataPackage[5+(i*3)+1] = lk.colors[i].Green
-				lk.dataPackage[5+(i*3)+2] = lk.colors[i].Blue
-			}
-		}
-		//Fill Empty Colors
-		if lk.effect == EffectBreath && len(lk.colors) != 4 {
-			j := len(lk.colors)
-			for i := j; i < 4; i++ {
-				lk.dataPackage[5+(i*3)+0] = lk.colors[i%j].Red
-				lk.dataPackage[5+(i*3)+1] = lk.colors[i%j].Green
-				lk.dataPackage[5+(i*3)+2] = lk.colors[i%j].Blue
-			}
+	}
+	//Fill Empty Colors
+	if (lk.effect == EffectBreath || lk.effect == EffectStatic) && len(lk.colors) != 4 {
+		j := len(lk.colors)
+		for i := j; i < 4; i++ {
+			lk.dataPackage[5+(i*3)+0] = lk.colors[i%j].Red
+			lk.dataPackage[5+(i*3)+1] = lk.colors[i%j].Green
+			lk.dataPackage[5+(i*3)+2] = lk.colors[i%j].Blue
 		}
 	}
 

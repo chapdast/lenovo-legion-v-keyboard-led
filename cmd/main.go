@@ -76,7 +76,7 @@ func main() {
 			fmt.Printf("error: %s\n", err)
 			os.Exit(1)
 		}
-		if err := lk.Static(lvl.EffectSpeed(speed), lvl.Brightness(brightness), list[0]); err != nil {
+		if err := lk.Static(lvl.EffectSpeed(speed), lvl.Brightness(brightness), list...); err != nil {
 			log.Fatalln(err)
 		}
 	case "breath":
