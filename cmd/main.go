@@ -9,8 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	lvl "github.com/chapdast/legion-v-keyboard-led"
 	"github.com/google/gousb"
+
+	lvl "github.com/chapdast/legion-v-keyboard-led"
 )
 
 var (
@@ -46,6 +47,16 @@ var (
 	cmdVPID = `Vendor and Product ID in VID:PID format.`
 )
 
+var (
+	permitHelpFormat = `Add udev rule as "/etc/udev/rules.d/10-kblight.rules" if you want control light as user
+	SUBSYSTEM=="usb", ATTR{idVendor}=="%04x", ATTR{idProduct}=="%04x", MODE="0666"
+	
+	then run
+	
+	sudo udevadm control --reload-rules && sudo udevadm trigger
+	`
+)
+
 func init() {
 
 	flag.StringVar(&effectType, "effect", "off", cmdEffectType)
@@ -69,7 +80,9 @@ func main() {
 
 	flag.Parse()
 	if debug {
-		log.Printf("flags:\nET:%s,\nSP:%d,\nBR:%d,\nDR:%s,\nCS:%s\n", effectType, brightness, speed, waveDir, colors)
+		fmt.Printf("\n-COMMAND------------\n")
+		fmt.Printf("flags:\n\tEffect Type: %s,\n\tSpeed: %d,\n\tBrightness: %d,\n\tDirection: %s,\n\tRGB: %s\n", 
+		effectType, brightness, speed, waveDir, colors)
 	}
 	lk := lvl.New()
 
@@ -118,6 +131,9 @@ func main() {
 	ctx := gousb.NewContext()
 	defer ctx.Close()
 
+	if debug {
+		ctx.Debug(1)
+	}
 	// dev, err := getDevice(ctx)
 	vpID := strings.Split(vpid, ":")
 	vIDtmp, err := strconv.ParseUint(vpID[0], 16, 16)
@@ -134,43 +150,68 @@ func main() {
 	dev, err := ctx.OpenDeviceWithVIDPID(gousb.ID(vID), gousb.ID(pID))
 	if err != nil {
 		if errors.Is(err, gousb.ErrorAccess) {
-			fmt.Printf(`Add udev rule as "/etc/udev/rules.d/10-kblight.rules" if you want control light as user
-SUBSYSTEM=="usb", ATTR{idVendor}=="%04x", ATTR{idProduct}=="%04x", MODE="0666"
-
-then run
-
-sudo udevadm control --reload-rules && sudo udevadm trigger
-`, vID, pID)
+			fmt.Printf(permitHelpFormat, vID, pID)
 			fmt.Println(ErrPermissionDenied)
 			os.Exit(1)
 		}
 		fmt.Printf("error located device: %s\n", err)
 		os.Exit(1)
 	}
+
+
 	if dev == nil {
 		fmt.Println("can not get device make sure VendorID:ProducID is correct, current is % x:% x", vID, pID)
 		os.Exit(1)
 	}
+
+	
 	defer dev.Close()
-	// Device need to get detached before sending any commands
-	if err := dev.SetAutoDetach(true); err != nil {
-		fmt.Printf("failed to detach device from kernel, %s\n", err)
+	// // Device need to get detached before sending any commands
+	// if err := dev.SetAutoDetach(true); err != nil {
+	// 	fmt.Printf("failed to detach device from kernel, %s\n", err)
+	// 	os.Exit(1)
+	// }
+
+	if err := dev.Reset(); err !=nil {
+		fmt.Printf("can not reset device, %s\n", err)
 		os.Exit(1)
 	}
+	if err := dev.SetAutoDetach(false); err !=nil {
+		fmt.Printf("can not disable auto detach, %s\n", err)
+		os.Exit(1)
+	}
+
+	if debug {
+		fmt.Printf("\n-DEVICE-------------\n")
+		for i := range []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 10} {
+			des, err := dev.GetStringDescriptor(i)
+			if err != nil {
+				continue
+			}
+			fmt.Printf("\tDescriptor  %d: %s\n", i, des)
+		}
+		fmt.Printf("\n-DEVICE-CONFIG------\n")
+		num, err := dev.ActiveConfigNum()
+		fmt.Printf("\tActive Config: %v, err: %v\n", num, err)
+		fmt.Printf("\tDevice Info: %v\n",dev.String())
+		
+
+	}
+
 
 	data := lk.Data()
 
 	if debug {
-		log.Printf("data: %d, % x\n", len(data), data)
+		fmt.Printf("\n-PAYLOAD-------------\n")
+		fmt.Printf("len:%d\n% x\n", len(data), data)
+		fmt.Printf("\n---------------------\n")
 		fmt.Println(lk)
+		fmt.Printf("-----------------------\n")
 	}
-	c, err := dev.Control(0x21, 0x9, 0x03CC, 0x00, data)
+
+	c, err := dev.Control(0x21, 0x9, 0x03cc, 0x00, data)
 	if err != nil {
-		if errors.Is(err, gousb.ErrorBusy) {
-			fmt.Println("error send command: device is busy")
-			os.Exit(1)
-		}
-		fmt.Printf("error send command: %s\n", err)
+		fmt.Printf("error: %q\n", err)
 		os.Exit(1)
 	}
 	if c != len(data) {
